@@ -1,92 +1,65 @@
+import datetime
 import os
 
-class Student:
-    def __init__(self, name, roll, dept):
-        self.name = name
-        self.roll = roll
-        self.dept = dept
+class Invoice:
+    def __init__(self, client_name, service_description, rate_per_hour, hours_worked, tax_percent=18):
+        self.client_name = client_name
+        self.service_description = service_description
+        self.rate_per_hour = float(rate_per_hour)
+        self.hours_worked = float(hours_worked)
+        self.tax_percent = tax_percent
+        self.date = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.invoice_number = f"INV{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-    def __str__(self):
-        return f"{self.name}, {self.roll}, {self.dept}"
+    def calculate_total(self):
+        subtotal = self.rate_per_hour * self.hours_worked
+        tax = subtotal * (self.tax_percent / 100)
+        total = subtotal + tax
+        return subtotal, tax, total
 
-class StudentManager:
-    def __init__(self, filename="students.txt"):
-        self.filename = filename
-        self.students = []
-        self.load_students()
+    def generate_invoice_text(self):
+        subtotal, tax, total = self.calculate_total()
+        return f"""
+        -------------------------------------------
+                    FREELANCE INVOICE
+        -------------------------------------------
+        Invoice Number: {self.invoice_number}
+        Date: {self.date}
 
-    def load_students(self):
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as file:
-                for line in file:
-                    name, roll, dept = line.strip().split(", ")
-                    self.students.append(Student(name, roll, dept))
+        Client Name: {self.client_name}
+        Service Description: {self.service_description}
 
-    def save_students(self):
-        with open(self.filename, 'w') as file:
-            for student in self.students:
-                file.write(str(student) + "\n")
+        Rate per Hour: ₹{self.rate_per_hour}
+        Hours Worked: {self.hours_worked}
+        Subtotal: ₹{subtotal:.2f}
+        Tax ({self.tax_percent}%): ₹{tax:.2f}
+        -------------------------------------------
+        Total Amount Due: ₹{total:.2f}
+        -------------------------------------------
+        Thank you for your business!
+        """
 
-    def add_student(self):
-        name = input("Enter name: ")
-        roll = input("Enter roll number: ")
-        dept = input("Enter department: ")
-        self.students.append(Student(name, roll, dept))
-        print("Student added successfully.")
+    def save_to_file(self):
+        filename = f"Invoice_{self.invoice_number}.txt"
+        with open(filename, 'w') as f:
+            f.write(self.generate_invoice_text())
+        print(f"\nInvoice saved as {filename}")
 
-    def view_students(self):
-        if not self.students:
-            print("No students found.")
-            return
-        print("\nAll Students:")
-        for student in self.students:
-            print(student)
+# --- MAIN PROGRAM ---
 
-    def search_student(self):
-        roll = input("Enter roll number to search: ")
-        found = False
-        for student in self.students:
-            if student.roll == roll:
-                print(f"Student Found: {student}")
-                found = True
-                break
-        if not found:
-            print("Student not found.")
+def main():
+    print("------ FREELANCER INVOICE GENERATOR ------")
+    client = input("Client Name: ")
+    service = input("Service Description: ")
+    rate = input("Rate per Hour (₹): ")
+    hours = input("Hours Worked: ")
 
-    def delete_student(self):
-        roll = input("Enter roll number to delete: ")
-        for i, student in enumerate(self.students):
-            if student.roll == roll:
-                del self.students[i]
-                print("Student deleted successfully.")
-                return
-        print("Student not found.")
-
-    def menu(self):
-        while True:
-            print("\n--- Student Record System ---")
-            print("1. Add Student")
-            print("2. View Students")
-            print("3. Search Student")
-            print("4. Delete Student")
-            print("5. Save and Exit")
-            choice = input("Enter your choice: ")
-
-            if choice == '1':
-                self.add_student()
-            elif choice == '2':
-                self.view_students()
-            elif choice == '3':
-                self.search_student()
-            elif choice == '4':
-                self.delete_student()
-            elif choice == '5':
-                self.save_students()
-                print("Records saved. Exiting...")
-                break
-            else:
-                print("Invalid choice. Try again.")
+    try:
+        invoice = Invoice(client, service, rate, hours)
+        print(invoice.generate_invoice_text())
+        invoice.save_to_file()
+    except ValueError:
+        print("Invalid input! Please enter numeric values for rate and hours.")
 
 if __name__ == "__main__":
-    manager = StudentManager()
-    manager.menu()
+    main()
